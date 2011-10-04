@@ -11,7 +11,6 @@ module Bundler
         Updater.new(test_command).auto_update!
       end
 
-      # @todo spec
       def test_command
         if @argv.first == '-c'
           @argv[1..-1].join(' ')
@@ -30,47 +29,59 @@ module Bundler
 
       def auto_update!
         gemfile.gems.each do |gem|
-          if updatable?(gem)
-            Logger.log "Updating #{gem.name}."
-            update(gem, :patch) and update(gem, :minor) and update(gem, :major)
-          else
-            Logger.log "#{gem.name} is not auto-updatable, passing it."
-          end
+          GemUpdater.new(gem, gemfile, test_command).auto_update
         end
       end
 
       def gemfile
         @gemfile ||= Gemfile.new
       end
+    end
 
-      def update(gem, version_type)
+    class GemUpdater
+      attr_reader :gem, :gemfile, :test_command
+
+      def initialize(gem, gemfile, test_command)
+        @gem, @gemfile, @test_command = gem, gemfile, test_command
+      end
+
+      def auto_update
+        if updatable?
+          Logger.log "Updating #{gem.name}."
+          update(:patch) and update(:minor) and update(:major)
+        else
+          Logger.log "#{gem.name} is not auto-updatable, passing it."
+        end
+      end
+
+      def update(version_type)
         new_version = gem.last_version(version_type)
 
-        if new_version == version
+        if new_version == gem.version
           Logger.log_indent "Current gem already at latest #{version_type} version. Passing this update."
           return
         end
 
         Logger.log_indent "Updating to #{version_type} version #{new_version}"
 
-        gem.version = gem.new_version
+        gem.version = new_version
 
         gemfile.update_gem(gem)
 
-        if run_test
+        if run_test_suite
           Logger.log_indent "Test suite ran succesfully. Committing changes."
-          commit_new_version(gem)
+          commit_new_version
         else
           Logger.log_indent "Test suite failed to run. Reverting changes."
           revert_to_previous_version
         end
       end
 
-      def updatable?(gem)
+      def updatable?
         gem.version =~ /^\d+\.\d+\.\d+$/ && gem.options.nil?
       end
 
-      def commit_new_version(gem)
+      def commit_new_version
         run_cmd "git commit Gemfile Gemfile.lock -m 'Auto update #{gem.name} to version #{gem.new_version}'"
       end
 
@@ -78,7 +89,7 @@ module Bundler
         run_cmd "git reset --hard Gemfile Gemfile.lock"
       end
 
-      def run_test
+      def run_test_suite
         run_cmd test_command
       end
 
@@ -124,10 +135,15 @@ module Bundler
       def self.log(msg, prefix = "")
         puts prefix + msg
       end
+
+      def self.log_indent(msg)
+        log(msg, "  - ")
+      end
     end
 
     class Dependency
-      attr_reader :name, :version, :options
+      attr_reader :name, :options
+      attr_accessor :version
 
       def initialize(name, version = nil, options = nil)
         @name, @version, @options = name, version, options
