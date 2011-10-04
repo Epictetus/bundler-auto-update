@@ -86,14 +86,33 @@ module Bundler
     end # class Updater
 
     class Gemfile
+
+      GEM_LINE_REGEX = /^\s*gem\s*['"](\w+)['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n$/
+
       # @todo spec
-      def self.gems
-        # IMPLEMENT ME !
+      def gems
+        gems = []
+
+        content.each do |l|
+
+          if match = l.match(GEM_LINE_REGEX)
+            _, name, _, version, _, options = match.to_a
+            gems << Gem.new(name, version, options)
+          end
+        end
+
+        gems
       end
 
       # @todo spec
-      def self.update_gem(gem)
+      def update_gem(gem)
         # IMPLEMENT ME !
+      end
+
+      private
+
+      def content
+        @content ||= File.read('Gemfile')
       end
     end # class Gemfile
 
@@ -104,6 +123,11 @@ module Bundler
     end
 
     class Gem
+      attr_reader :name, :version, :options
+
+      def initialize(name, version, options)
+        @name, @version, @options = name, version, options
+      end
       def last_version(version_type)
         # IMPLEMENT ME !
       end
