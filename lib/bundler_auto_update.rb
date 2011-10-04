@@ -82,7 +82,7 @@ module Bundler
       end
 
       def commit_new_version
-        run_cmd "git commit Gemfile Gemfile.lock -m 'Auto update #{gem.name} to version #{gem.new_version}'"
+        run_cmd "git commit Gemfile Gemfile.lock -m 'Auto update #{gem.name} to version #{gem.version}'"
       end
 
       def revert_to_previous_version
@@ -103,7 +103,7 @@ module Bundler
     class Gemfile
 
       def gem_line_regex(gem_name = '(\w+)')
-        /^\s*gem\s*['"]#{gem_name}['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n$/
+        /^\s*gem\s*['"]#{gem_name}['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n?$/
       end
 
       # @note This funky code parser could be replaced by a funky dsl re-implementation
@@ -155,7 +155,7 @@ module Bundler
       end
 
       def run_bundle_update(gem)
-        CommandRunner.system("bundle update #{gem.name}")
+        CommandRunner.system("bundle install")
       end
     end # class Gemfile
 
@@ -191,8 +191,8 @@ module Bundler
       end
 
       def available_versions
-        rails_line = gem_remote_list_output.scan(/^#{name}\s.*$/).first
-        rails_line.scan /\d+\.\d+\.\d+/
+        the_gem_line = gem_remote_list_output.scan(/^#{name}\s.*$/).first
+        the_gem_line.scan /\d+\.\d+\.\d+/
       end
 
       def gem_remote_list_output

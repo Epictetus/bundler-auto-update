@@ -23,13 +23,9 @@ pkg
 
 ## PROJECT::SPECIFIC
 .bundle
-spec/rails
-*.sqlite3-journal
 Gemfile.lock
 Gemfile-*.lock
-capybara*
-viewcumber
-test-rails*
-public
 .rvmrc
 .rspec
+aruba
+tmp

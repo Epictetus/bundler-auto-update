@@ -4,4 +4,5 @@ require 'aruba/cucumber'
 
 Before do
   ENV['BUNDLE_GEMFILE'] = 'Gemfile'
+  @aruba_timeout_seconds = 60
 end 
