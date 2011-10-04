@@ -102,14 +102,16 @@ module Bundler
 
     class Gemfile
 
-      GEM_LINE_REGEX = /^\s*gem\s*['"](\w+)['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n$/
+      def gem_line_regex(gem_name = '(\w+)')
+        /^\s*gem\s*['"]#{gem_name}['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n$/
+      end
 
       # @note This funky code parser could be replaced by a funky dsl re-implementation
       def gems
         gems = []
 
         content.each_line do |l|
-          if match = l.match(GEM_LINE_REGEX)
+          if match = l.match(gem_line_regex)
             _, name, _, version, _, options = match.to_a
             gems << Dependency.new(name, version, options)
           end
@@ -120,13 +122,40 @@ module Bundler
 
       # @todo spec
       def update_gem(gem)
-        # IMPLEMENT ME !
+        update_content(gem) and write and run_bundle_update(gem)
+      end
+
+      def content
+        @content ||= read
       end
 
       private
 
-      def content
-        @content ||= File.read('Gemfile')
+      def update_content(gem)
+        new_content = ""
+        content.each_line do |l|
+          if l =~ gem_line_regex(gem.name)
+            l.gsub!(/\d+\.\d+\.\d+/, gem.version)
+          end
+
+          new_content += l
+        end
+
+        @content = new_content
+      end
+
+      def read
+        File.read('Gemfile')
+      end
+
+      def write
+        File.open('Gemfile', 'w') do |f|
+          f.write(content)
+        end
+      end
+
+      def run_bundle_update(gem)
+        CommandRunner.system("bundle update #{gem.name}")
       end
     end # class Gemfile
 

@@ -1,9 +1,19 @@
 require 'spec_helper'
 
 describe Gemfile do
+  let(:content) { <<-EOF
+source :rubygems
+
+gem 'rails',  "3.0.0"
+ gem 'rake' , '< 0.9' 
+gem 'mysql', :git => "git://...."
+EOF
+}
+
   let(:gemfile) do
     Gemfile.new.tap { |gemfile|
-      gemfile.stub!(:content) { content }
+      gemfile.stub!(:read) { content }
+      gemfile.stub!(:write) { true }
     }
   end
 
@@ -17,15 +27,6 @@ describe Gemfile do
     end
 
     context "when Gemfile contains 3 gems" do
-      let(:content) { <<-EOF
-source :rubygems
-
-gem 'rails', "3.0.0"
- gem 'rake' , '< 0.9' 
-gem 'mysql', :git => "git://...."
-EOF
-}
-
       its(:size) { should == 3 }
 
       describe "first gem" do
@@ -53,4 +54,23 @@ EOF
       end
     end
   end # describe "#gems"
+
+  describe "#update_gem" do
+    it "should update the gem version in the Gemfile" do
+      gemfile.update_gem(Dependency.new('rails', '3.1.0'))
+      gemfile.content.should include(%{gem 'rails',  "3.1.0"})
+    end
+
+    it "should write the new Gemfile" do
+      gemfile.should_receive(:write)
+
+      gemfile.update_gem(Dependency.new('rails', '3.1.0'))
+    end
+
+    it "should run 'bundle update' against the gem" do
+      CommandRunner.should_receive(:system).with("bundle update rails")
+
+      gemfile.update_gem(Dependency.new('rails', '3.1.0'))
+    end
+  end
 end
