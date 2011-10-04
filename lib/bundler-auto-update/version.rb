@@ -1,7 +1,5 @@
 module Bundler
-  module Auto
-    module Update
-      VERSION = "0.0.1"
-    end
+  module AutoUpdate
+    VERSION = "0.0.1"
   end
 end
