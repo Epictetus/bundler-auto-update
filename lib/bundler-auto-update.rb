@@ -8,14 +8,14 @@ module Bundler
       end
 
       def run!
-        Update.new(test_command).auto_update!
+        Updater.new(test_command).auto_update!
       end
-
-      protected
 
       # @todo spec
       def test_command
-        # IMPLEMENT ME!
+        if @argv.first == '-c'
+          @argv[1..-1].join(' ')
+        end
       end
     end
 
@@ -24,8 +24,8 @@ module Bundler
 
       attr_reader :test_command
 
-      def initialize(test_command = DEFAULT_TEST_COMMAND)
-        @test_command = test_command
+      def initialize(test_command)
+        @test_command = test_command || DEFAULT_TEST_COMMAND
       end
 
       def auto_update!

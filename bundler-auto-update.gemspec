@@ -4,7 +4,7 @@ require "bundler-auto-update/version"
 
 Gem::Specification.new do |s|
   s.name        = "bundler-auto-update"
-  s.version     = Bundler::Auto::Update::VERSION
+  s.version     = Bundler::AutoUpdate::VERSION
   s.authors     = ["Philippe Creux"]
   s.email       = ["pcreux@gmail.com"]
   s.homepage    = ""
