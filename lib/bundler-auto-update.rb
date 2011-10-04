@@ -24,17 +24,17 @@ module Bundler
 
       attr_reader :test_command
 
-      def initialize(test_command)
+      def initialize(test_command = nil)
         @test_command = test_command || DEFAULT_TEST_COMMAND
       end
 
       def auto_update!
         gemfile.gems.each do |gem|
-          if gem.updatable?
-            Logger.log "Updating #{name}."
+          if updatable?(gem)
+            Logger.log "Updating #{gem.name}."
             update(gem, :patch) and update(gem, :minor) and update(gem, :major)
           else
-            Logger.log "#{name} is not auto-updatable, passing it."
+            Logger.log "#{gem.name} is not auto-updatable, passing it."
           end
         end
       end
@@ -64,6 +64,10 @@ module Bundler
           Logger.log_indent "Test suite failed to run. Reverting changes."
           revert_to_previous_version
         end
+      end
+
+      def updatable?(gem)
+        gem.version =~ /^\d+\.\d+\.\d+$/ && gem.options.nil?
       end
 
       def commit_new_version(gem)
@@ -97,7 +101,7 @@ module Bundler
 
           if match = l.match(GEM_LINE_REGEX)
             _, name, _, version, _, options = match.to_a
-            gems << Gem.new(name, version, options)
+            gems << Dependency.new(name, version, options)
           end
         end
 
@@ -122,16 +126,15 @@ module Bundler
       end
     end
 
-    class Gem
+    class Dependency
       attr_reader :name, :version, :options
 
-      def initialize(name, version, options)
+      def initialize(name, version = nil, options = nil)
         @name, @version, @options = name, version, options
       end
       def last_version(version_type)
         # IMPLEMENT ME !
       end
-    end # class Gem
-
+    end # class Dependency
   end # module AutoUpdate
 end # module Bundler
