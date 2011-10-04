@@ -96,7 +96,7 @@ module Bundler
       def run_cmd(cmd)
         Logger.log cmd
 
-        system cmd
+        CommandRunner.system(cmd)
       end
     end # class Updater
 
@@ -104,12 +104,11 @@ module Bundler
 
       GEM_LINE_REGEX = /^\s*gem\s*['"](\w+)['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n$/
 
-      # @todo spec
+      # @note This funky code parser could be replaced by a funky dsl re-implementation
       def gems
         gems = []
 
-        content.each do |l|
-
+        content.each_line do |l|
           if match = l.match(GEM_LINE_REGEX)
             _, name, _, version, _, options = match.to_a
             gems << Dependency.new(name, version, options)
@@ -142,15 +141,44 @@ module Bundler
     end
 
     class Dependency
-      attr_reader :name, :options
+      attr_reader :name, :options, :major, :minor, :patch
       attr_accessor :version
 
       def initialize(name, version = nil, options = nil)
         @name, @version, @options = name, version, options
+
+        @major, @minor, @patch = version.split('.') if version
       end
+
       def last_version(version_type)
-        # IMPLEMENT ME !
+        case version_type
+        when :patch
+          available_versions.select { |v| v =~ /^#{major}\.#{minor}\D/ }.first
+        when :minor
+          available_versions.select { |v| v =~ /^#{major}\./ }.first
+        when :major
+          available_versions.first
+        end
+      end
+
+      def available_versions
+        rails_line = gem_remote_list_output.scan(/^#{name}\s.*$/).first
+        rails_line.scan /\d+\.\d+\.\d+/
+      end
+
+      def gem_remote_list_output
+        CommandRunner.run "gem list #{name} -r"
       end
     end # class Dependency
+
+    class CommandRunner
+      def self.system(cmd)
+        Kernel.system cmd
+      end
+
+      def self.run(cmd)
+        `#{cmd}`
+      end
+    end
   end # module AutoUpdate
 end # module Bundler
