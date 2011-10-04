@@ -16,7 +16,7 @@ module Bundler
           @argv[1..-1].join(' ')
         end
       end
-    end
+    end # class CLI
 
     class Updater
       DEFAULT_TEST_COMMAND = "rake"
