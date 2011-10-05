@@ -69,7 +69,7 @@ module Bundler
         gemfile.update_gem(gem)
 
         if run_test_suite
-          Logger.log_indent "Test suite ran succesfully. Committing changes."
+          Logger.log_indent "Test suite ran successfully. Committing changes."
           commit_new_version
         else
           Logger.log_indent "Test suite failed to run. Reverting changes."
@@ -86,7 +86,7 @@ module Bundler
       end
 
       def revert_to_previous_version
-        run_cmd "git reset --hard Gemfile Gemfile.lock"
+        run_cmd "git checkout Gemfile Gemfile.lock"
       end
 
       def run_test_suite
@@ -110,7 +110,7 @@ module Bundler
       def gems
         gems = []
 
-        content.each_line do |l|
+        content.dup.each_line do |l|
           if match = l.match(gem_line_regex)
             _, name, _, version, _, options = match.to_a
             gems << Dependency.new(name, version, options)

@@ -20,9 +20,12 @@ Feature: Auto update Gemfile
       """
       Updating dmg.
         - Updating to patch version 0.0.4
+      """
+    Then the output should contain:
+      """
       rake
         - Test suite failed to run. Reverting changes.
-      git reset --hard Gemfile Gemfile.lock
+      git checkout Gemfile Gemfile.lock
       """
 
   Scenario: Auto Update with custom command
@@ -45,9 +48,14 @@ Feature: Auto update Gemfile
       """
       Updating dmg.
         - Updating to patch version 0.0.4
-      rake
+      """
+    Then the output should contain:
+      """
       echo Hello
       Hello
-        - Test suite ran succesfully. Committing changes.
+        - Test suite ran successfully. Committing changes.
+      git commit Gemfile Gemfile.lock -m 'Auto update dmg to version 0.0.4'
       """
+    When I run `git log`
+    Then the output should contain "Auto update dmg to version 0.0.4"
 
