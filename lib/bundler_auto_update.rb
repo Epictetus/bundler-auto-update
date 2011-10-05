@@ -66,14 +66,16 @@ module Bundler
 
         gem.version = new_version
 
-        gemfile.update_gem(gem)
-
-        if run_test_suite
+        if gemfile.update_gem(gem) && run_test_suite
           Logger.log_indent "Test suite ran successfully. Committing changes."
           commit_new_version
+
+          true
         else
           Logger.log_indent "Test suite failed to run. Reverting changes."
           revert_to_previous_version
+
+          false
         end
       end
 
@@ -87,6 +89,7 @@ module Bundler
 
       def revert_to_previous_version
         run_cmd "git checkout Gemfile Gemfile.lock"
+        gemfile.reload!
       end
 
       def run_test_suite
@@ -94,8 +97,6 @@ module Bundler
       end
 
       def run_cmd(cmd)
-        Logger.log cmd
-
         CommandRunner.system(cmd)
       end
     end # class Updater
@@ -129,6 +130,10 @@ module Bundler
         @content ||= read
       end
 
+      def reload!
+        @content = read
+      end
+
       private
 
       def update_content(gem)
@@ -155,7 +160,7 @@ module Bundler
       end
 
       def run_bundle_update(gem)
-        CommandRunner.system("bundle install")
+        CommandRunner.system("bundle install") or CommandRunner.system("bundle update #{gem.name}")
       end
     end # class Gemfile
 
@@ -202,10 +207,13 @@ module Bundler
 
     class CommandRunner
       def self.system(cmd)
+        Logger.log cmd
         Kernel.system cmd
       end
 
       def self.run(cmd)
+        Logger.log cmd
+
         `#{cmd}`
       end
     end
