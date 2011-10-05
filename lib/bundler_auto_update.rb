@@ -196,7 +196,7 @@ module Bundler
       end
 
       def gem_remote_list_output
-        CommandRunner.run "gem list #{name} -r"
+        CommandRunner.run "gem list #{name} -r -a"
       end
     end # class Dependency
 
