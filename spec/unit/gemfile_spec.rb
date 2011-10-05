@@ -67,8 +67,8 @@ EOF
       gemfile.update_gem(Dependency.new('rails', '3.1.0'))
     end
 
-    it "should run 'bundle update' against the gem" do
-      CommandRunner.should_receive(:system).with("bundle update rails")
+    it "should run 'bundle install' against the gem" do
+      CommandRunner.should_receive(:system).with("bundle install")
 
       gemfile.update_gem(Dependency.new('rails', '3.1.0'))
     end
