@@ -68,7 +68,12 @@ module Bundler
 
         gem.version = new_version
 
-        (update_gemfile and run_test_suite and commit_new_version) or revert_to_previous_version
+        if update_gemfile and run_test_suite and commit_new_version
+          true
+        else
+          revert_to_previous_version
+          false
+        end
       end
 
       private
@@ -108,7 +113,7 @@ module Bundler
         CommandRunner.system "git checkout Gemfile Gemfile.lock"
         gemfile.reload!
       end
-    end # class Updater
+    end # class GemUpdater
 
     class Gemfile
 

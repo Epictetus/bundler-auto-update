@@ -45,41 +45,42 @@ describe GemUpdater do
 
     context "when new version" do
       context "when tests pass" do
-        it "should commit new version" do
+        it "should commit new version and return true" do
           gem.should_receive(:last_version).with(:patch) { gem.version.next }
           gem_updater.should_receive(:update_gemfile).and_return true
           gem_updater.should_receive(:run_test_suite).and_return true
           gem_updater.should_receive(:commit_new_version).and_return true
           gem_updater.should_not_receive(:revert_to_previous_version)
 
-          gem_updater.update(:patch)
+          gem_updater.update(:patch).should == true
         end
       end
 
       context "when tests do not pass" do
-        it "should revert to previous version" do
+        it "should revert to previous version and return false" do
           gem.should_receive(:last_version).with(:patch) { gem.version.next }
           gem_updater.should_receive(:update_gemfile).and_return true
           gem_updater.should_receive(:run_test_suite).and_return false
           gem_updater.should_not_receive(:commit_new_version)
           gem_updater.should_receive(:revert_to_previous_version)
 
-          gem_updater.update(:patch)
+          gem_updater.update(:patch).should == false
         end
       end
 
       context "when it fails to upgrade gem" do
-        it "should revert to previous version" do
+        it "should revert to previous version and return false" do
           gem.should_receive(:last_version).with(:patch) { gem.version.next }
           gem_updater.should_receive(:update_gemfile).and_return false
           gem_updater.should_not_receive(:run_test_suite)
           gem_updater.should_not_receive(:commit_new_version)
           gem_updater.should_receive(:revert_to_previous_version)
 
-          gem_updater.update(:patch)
+          gem_updater.update(:patch).should == false
         end
       end
     end
-  end
+  end # describe "#update"
+
 end
 
