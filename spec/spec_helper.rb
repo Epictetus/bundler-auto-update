@@ -6,9 +6,23 @@ include Bundler::AutoUpdate
 class Bundler::AutoUpdate::CommandRunner
   def self.system(cmd)
     puts "Stub! #{cmd}"
+
+    true
   end
 
   def self.run(cmd)
     puts "Stub! #{cmd}"
+  end
+end
+
+class Gemfile
+  def read
+    puts "Stub! read"
+  end
+
+  def write
+    puts "Stub! write"
+
+    true
   end
 end

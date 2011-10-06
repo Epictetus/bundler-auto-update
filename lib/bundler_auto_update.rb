@@ -47,34 +47,49 @@ module Bundler
 
       def auto_update
         if updatable?
-          Logger.log "Updating #{gem.name}."
+          Logger.log "Updating #{gem.name}"
           update(:patch) and update(:minor) and update(:major)
         else
           Logger.log "#{gem.name} is not auto-updatable, passing it."
         end
       end
 
+      # @return [Boolean] true on success or when already at latest version
       def update(version_type)
         new_version = gem.last_version(version_type)
 
         if new_version == gem.version
           Logger.log_indent "Current gem already at latest #{version_type} version. Passing this update."
-          return
+
+          return true
         end
 
         Logger.log_indent "Updating to #{version_type} version #{new_version}"
 
         gem.version = new_version
 
-        if gemfile.update_gem(gem) && run_test_suite
-          Logger.log_indent "Test suite ran successfully. Committing changes."
-          commit_new_version
+        (update_gemfile and run_test_suite and commit_new_version) or revert_to_previous_version
+      end
 
+      private
+
+      def update_gemfile
+        if gemfile.update_gem(gem) 
+          Logger.log_indent "Gemfile updated successfully."
           true
         else
-          Logger.log_indent "Test suite failed to run. Reverting changes."
-          revert_to_previous_version
+          Logger.log_indent "Failed to update Gemfile."
+          false
+        end
+      end
 
+      def run_test_suite
+        Logger.log_indent "Running test suite"
+        if CommandRunner.system test_command
+          Logger.log_indent "Test suite ran successfully."
+          true
+        else
+          Logger.log_indent "Test suite failed to run."
           false
         end
       end
@@ -84,20 +99,14 @@ module Bundler
       end
 
       def commit_new_version
-        run_cmd "git commit Gemfile Gemfile.lock -m 'Auto update #{gem.name} to version #{gem.version}'"
+        Logger.log_indent "Committing changes"
+        CommandRunner.system "git commit Gemfile Gemfile.lock -m 'Auto update #{gem.name} to version #{gem.version}'"
       end
 
       def revert_to_previous_version
-        run_cmd "git checkout Gemfile Gemfile.lock"
+        Logger.log_indent "Reverting changes"
+        CommandRunner.system "git checkout Gemfile Gemfile.lock"
         gemfile.reload!
-      end
-
-      def run_test_suite
-        run_cmd test_command
-      end
-
-      def run_cmd(cmd)
-        CommandRunner.system(cmd)
       end
     end # class Updater
 
@@ -172,6 +181,10 @@ module Bundler
       def self.log_indent(msg)
         log(msg, "  - ")
       end
+
+      def self.log_cmd(msg)
+        log(msg, "    > ")
+      end
     end
 
     class Dependency
@@ -207,13 +220,12 @@ module Bundler
 
     class CommandRunner
       def self.system(cmd)
-        Logger.log cmd
+        Logger.log_cmd cmd
+
         Kernel.system cmd
       end
 
       def self.run(cmd)
-        Logger.log cmd
-
         `#{cmd}`
       end
     end

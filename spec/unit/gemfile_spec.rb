@@ -58,6 +58,7 @@ EOF
   describe "#update_gem" do
     it "should update the gem version in the Gemfile" do
       gemfile.update_gem(Dependency.new('rails', '3.1.0'))
+
       gemfile.content.should include(%{gem 'rails',  "3.1.0"})
     end
 
@@ -68,9 +69,17 @@ EOF
     end
 
     it "should run 'bundle install' against the gem" do
-      CommandRunner.should_receive(:system).with("bundle install")
+      CommandRunner.should_receive(:system).with("bundle install") { true }
+      CommandRunner.should_not_receive(:system).with("bundle update rails")
 
       gemfile.update_gem(Dependency.new('rails', '3.1.0'))
+    end
+
+    it "should run 'bundle update' against the gem when bundle install fails because a gem version is locked" do
+      CommandRunner.should_receive(:system).with("bundle install").and_return false
+      CommandRunner.should_receive(:system).with("bundle update rails").and_return true
+
+      gemfile.update_gem(Dependency.new('rails', '3.1.0')).should == true
     end
   end
 end
