@@ -12,12 +12,16 @@ class Bundler::AutoUpdate::CommandRunner
 
   def self.run(cmd)
     puts "Stub! #{cmd}"
+
+    "command output"
   end
 end
 
 class Gemfile
   def read
     puts "Stub! read"
+
+    true
   end
 
   def write
