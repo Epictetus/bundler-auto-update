@@ -11,6 +11,7 @@ module Bundler
         Updater.new(test_command).auto_update!
       end
 
+      # @return [String] Test command from @argv
       def test_command
         if @argv.first == '-c'
           @argv[1..-1].join(' ')
@@ -33,6 +34,8 @@ module Bundler
         end
       end
 
+      private
+
       def gemfile
         @gemfile ||= Gemfile.new
       end
@@ -45,6 +48,7 @@ module Bundler
         @gem, @gemfile, @test_command = gem, gemfile, test_command
       end
 
+      # Attempt to update to patch, then to minor then to major versions.
       def auto_update
         if updatable?
           Logger.log "Updating #{gem.name}"
@@ -54,6 +58,10 @@ module Bundler
         end
       end
 
+      # Update current gem to latest :version_type:, run test suite and commit new Gemfile
+      # if successful.
+      #
+      # @param version_type :patch or :minor or :major
       # @return [Boolean] true on success or when already at latest version
       def update(version_type)
         new_version = gem.last_version(version_type)
@@ -78,6 +86,9 @@ module Bundler
 
       private
 
+      # Update gem version in Gemfile.
+      #
+      # @return true on success, false on failure.
       def update_gemfile
         if gemfile.update_gem(gem) 
           Logger.log_indent "Gemfile updated successfully."
@@ -88,6 +99,7 @@ module Bundler
         end
       end
 
+      # @return true on success, false on failure
       def run_test_suite
         Logger.log_indent "Running test suite"
         if CommandRunner.system test_command
@@ -118,6 +130,9 @@ module Bundler
 
     class Gemfile
 
+      # Regex that matches a gem definition line.
+      #
+      # @return [RegEx] matching [_, name, _, version, _, options]
       def gem_line_regex(gem_name = '(\w+)')
         /^\s*gem\s*['"]#{gem_name}['"]\s*(,\s*['"](.+)['"])?\s*(,\s*(.*))?\n?$/
       end
@@ -136,15 +151,17 @@ module Bundler
         gems
       end
 
-      # @todo spec
+      # Update Gemfile and run 'bundle update'
       def update_gem(gem)
         update_content(gem) and write and run_bundle_update(gem)
       end
 
+      # @return [String] Gemfile content
       def content
         @content ||= read
       end
 
+      # Reload Gemfile content
       def reload!
         @content = read
       end
@@ -164,16 +181,23 @@ module Bundler
         @content = new_content
       end
 
+      # @return [String] Gemfile content read from filesystem
       def read
         File.read('Gemfile')
       end
 
+      # Write content to Gemfile
       def write
         File.open('Gemfile', 'w') do |f|
           f.write(content)
         end
       end
 
+      # Attempt to run 'bundle install' and fall back on running 'bundle update :gem'.
+      #
+      # @param [Dependency] gem The gem to update
+      #
+      # @return true on success, false on failure
       def run_bundle_update(gem)
         CommandRunner.system("bundle install") or CommandRunner.system("bundle update #{gem.name}")
       end
@@ -184,10 +208,16 @@ module Bundler
         puts prefix + msg
       end
 
+      # Log with indentation:
+      # "  - Log message"
+      #
       def self.log_indent(msg)
         log(msg, "  - ")
       end
 
+      # Log command:
+      # "  > bundle update"
+      #
       def self.log_cmd(msg)
         log(msg, "    > ")
       end
@@ -203,6 +233,13 @@ module Bundler
         @major, @minor, @patch = version.split('.') if version
       end
 
+      # Return last version scoped at :version_type:.
+      #
+      # Example: last_version(:patch), returns the last patch version 
+      # for the current major/minor version
+      #
+      # @return [String] last version. Ex: '1.2.3'
+      #
       def last_version(version_type)
         case version_type
         when :patch
@@ -211,13 +248,20 @@ module Bundler
           available_versions.select { |v| v =~ /^#{major}\./ }.first
         when :major
           available_versions.first
+        else
+          raise "Invalid version_type: #{version_type}"
         end
       end
 
+      # Return an ordered array of all available versions.
+      #
+      # @return [Array] of [String].
       def available_versions
         the_gem_line = gem_remote_list_output.scan(/^#{name}\s.*$/).first
         the_gem_line.scan /\d+\.\d+\.\d+/
       end
+
+      private
 
       def gem_remote_list_output
         CommandRunner.run "gem list #{name} -r -a"
@@ -225,12 +269,17 @@ module Bundler
     end # class Dependency
 
     class CommandRunner
+
+      # Output the command about to run, and run it using system.
+      #
+      # @return true on success, false on failure
       def self.system(cmd)
         Logger.log_cmd cmd
 
         Kernel.system cmd
       end
 
+      # Run a system command and return its output.
       def self.run(cmd)
         `#{cmd}`
       end
