@@ -7,7 +7,7 @@ describe GemUpdater do
   describe "auto_update" do
 
     context "when gem is updatable" do
-      let(:gem_updater) { GemUpdater.new(Dependency.new('rails', '3.0.0', nil), gemfile, test_command) }
+      let(:gem_updater) { GemUpdater.new(Dependency.new('rails', '3.0.0'), gemfile, test_command) }
 
       it "should attempt to update to patch, minor and major" do
         gem_updater.should_receive(:update).with(:patch).and_return(true)
@@ -18,7 +18,7 @@ describe GemUpdater do
       end
     end
 
-    context "when gem is not" do
+    context "when gem is not updatable" do
       let(:gem_updater) { GemUpdater.new(Dependency.new('rake', '<0.9'), gemfile, test_command) }
 
       it "should not attempt to update it" do

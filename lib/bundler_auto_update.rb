@@ -99,8 +99,9 @@ module Bundler
         end
       end
 
+      # @return true when the gem has a fixed version.
       def updatable?
-        gem.version =~ /^\d+\.\d+\.\d+$/ && gem.options.nil?
+        gem.version =~ /^\d+\.\d+\.\d+$/
       end
 
       def commit_new_version
